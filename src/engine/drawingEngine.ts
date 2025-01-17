@@ -1,38 +1,38 @@
-import { Point } from 'paper';
-import { Path } from 'paper';
 import paper from 'paper';
 
 export interface NumberPair {
     x: number,
-    y: number
-}
+    y: number,
+};
 
 export interface VisualElement {
     type: string,
-}
+};
 
 export interface SketchoPath extends VisualElement {
-    type: 'path',
-    lineWeight: number,
+    type: "path",
     color: string,
-    points: NumberPair[];
-}
+    size: number,
+    points: NumberPair[],
+};
 
 export interface CanvasState {
-    elements: VisualElement[];
-}
+    elements: VisualElement[],
+};
 
 export class CanvasEngine {
     private static inst: CanvasEngine;
+    private canvasState: CanvasState;
     private canvas: HTMLCanvasElement;
     private paperInstance: typeof paper;
-    private canvasState: CanvasState;
-    
-    public constructor(canvas: HTMLCanvasElement) {
+    private currentPath: {sketchoPath: SketchoPath, paperPath: paper.Path} | null;
+
+    private constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         this.paperInstance = paper;
         this.paperInstance.setup(canvas);
         this.canvasState = {elements: []};
+        this.currentPath = null;
     }
 
     public static initialize(canvas: HTMLCanvasElement): void {
@@ -46,49 +46,40 @@ export class CanvasEngine {
         return CanvasEngine.inst;
     }
 
+    public startPath(color: string, size: number): void {
+        this.currentPath = {
+            sketchoPath: {
+                type: "path",
+                color: color,
+                size: size,
+                points: [],
+            },
+            paperPath: new paper.Path({
+                strokeWidth: size,
+                strokeColor: color,
+                strokeCap: 'round',
+            })
+        };
+    }
 
-    public loadCanvasState(state: CanvasState): void {
-        for (let element of state.elements) {
-            this.addToCanvas(element, false);
+    public addPointToPath(point: NumberPair): void {
+        if (this.currentPath) {
+            this.currentPath.sketchoPath.points.push(point);
+            this.currentPath.paperPath.add(new paper.Point(point.x * this.canvas.width, point.y * this.canvas.height));
         }
     }
 
-    public addPath(path: SketchoPath) {
-        const canvasDimensions: NumberPair = {x: this.canvas.width, y: this.canvas.height};
-        const paperPath = new Path({
-            strokeColor: path.color,
-            strokeWidth: path.lineWeight,
-        });
-        for (let pathPoint of path.points) {
-            paperPath.add(new Point(pathPoint.x * canvasDimensions.x, pathPoint.y * canvasDimensions.y));
-        }
-        paperPath.simplify();
-    }
-
-    public addToCanvas(element: VisualElement, updateState = true): void {
-        if (updateState) {
-            this.canvasState.elements.push(element);
-        }
-
-        if (this.isPath(element)) {
-            this.addPath(element);
-        } else {
-            console.log("Failed to add " + element + " to canvas: type doesn't match any");
+    public endPath(): void {
+        if (this.currentPath) {
+            this.canvasState.elements.push(this.currentPath.sketchoPath);
+            this.currentPath.paperPath.simplify();
+            this.currentPath = null;
         }
     }
 
-
-
+    
     public getPaper(): typeof paper {
         return this.paperInstance;
-    }
-
-    public isPath(element: VisualElement): element is SketchoPath {
-        return element.type === 'path';
-    }
-
-    public getCanvasState(): CanvasState {
-        return this.canvasState;
     }
 
 }
