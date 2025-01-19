@@ -1,7 +1,6 @@
 <script lang="ts">
     import { Canvas } from '$lib';
+    import GameDisplay from '$lib/components/GameDisplay.svelte';
 </script>
 
-<div class="min-h-dvh">
-    <Canvas color={"black"} size={2}/>
-</div>
+<GameDisplay />

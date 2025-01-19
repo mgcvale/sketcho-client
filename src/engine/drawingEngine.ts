@@ -16,6 +16,13 @@ export interface SketchoPath extends VisualElement {
     points: NumberPair[],
 };
 
+export interface SketchoDot extends VisualElement {
+    type: "dot",
+    color: string,
+    size: number,
+    point: NumberPair
+}
+
 export interface CanvasState {
     elements: VisualElement[],
 };
@@ -46,13 +53,14 @@ export class CanvasEngine {
         return CanvasEngine.inst;
     }
 
-    public startPath(color: string, size: number): void {
+    public startPath(color: string, size: number, coords: paper.Point): void {
+
         this.currentPath = {
             sketchoPath: {
                 type: "path",
                 color: color,
                 size: size,
-                points: [],
+                points: [{x: coords.x / this.canvas.width, y: coords.y / this.canvas.height}],
             },
             paperPath: new paper.Path({
                 strokeWidth: size,
@@ -60,6 +68,7 @@ export class CanvasEngine {
                 strokeCap: 'round',
             })
         };
+        this.currentPath.paperPath.add(coords);
     }
 
     public addPointToPath(point: NumberPair): void {
@@ -69,12 +78,28 @@ export class CanvasEngine {
         }
     }
 
-    public endPath(): void {
+    public endPath(coords: paper.Point): void {
         if (this.currentPath) {
             this.canvasState.elements.push(this.currentPath.sketchoPath);
+            this.currentPath.paperPath.add(coords);
             this.currentPath.paperPath.simplify();
             this.currentPath = null;
         }
+    }
+
+    public resize(width: number, height: number): void {
+
+        const scaleFactorX = width / this.canvas.width;
+        const scaleFactorY = height / this.canvas.height;
+
+        this.canvas.width = width;
+        this.canvas.height = height;
+
+        this.paperInstance.view.viewSize = new paper.Size(this.canvas.width, this.canvas.height);
+
+        paper.project.activeLayer.children.forEach(item => {
+            item.scale(scaleFactorX, scaleFactorY, new paper.Point(0, 0));
+        });
     }
 
     

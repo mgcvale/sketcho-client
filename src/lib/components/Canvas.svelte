@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { CanvasEngine, type NumberPair } from "../../engine/drawingEngine";
     import paper from 'paper';
+    import type { PageParentData } from "../../routes/$types";
 
 
     let { color = 'black', size = 2 } = $props();
@@ -13,14 +14,15 @@
     onMount(() => {
         CanvasEngine.initialize(canvas);
 
-        CanvasEngine.getInstance().getPaper().view.onMouseDown = () => {
+        CanvasEngine.getInstance().getPaper().view.onMouseDown = (e: paper.MouseEvent) => {
             drawing = true;
-            CanvasEngine.getInstance().startPath(color, size);
+            CanvasEngine.getInstance().startPath(color, size, e.point);
         }
 
-        CanvasEngine.getInstance().getPaper().view.onMouseUp = () => {
+        CanvasEngine.getInstance().getPaper().view.onMouseUp = (e: paper.MouseEvent) => {
             drawing = false;
-            CanvasEngine.getInstance().endPath();
+            e.point.x += 0.1;
+            CanvasEngine.getInstance().endPath(e.point);
         }
 
         CanvasEngine.getInstance().getPaper().view.onMouseMove = (e: paper.MouseEvent) => {
@@ -29,12 +31,26 @@
                 y: e.point.y / canvas.height
             });
         }
+
+        function resizeCanvas() {
+            CanvasEngine.getInstance().resize(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+        }
+
+        const resizeObserver = new ResizeObserver(resizeCanvas);
+        resizeObserver.observe(canvasContainer);
+
+        return (() => {
+            resizeObserver.disconnect();
+        });
     });
 
 </script>
 
-<div bind:this={canvasContainer} class="min-h-dvh">
-    <canvas bind:this={canvas} width="800px" height="600px">
+<div bind:this={canvasContainer} class="h-full w-full">
+    <canvas resize="true" bind:this={canvas}>
 
     </canvas>
 </div>
+
+<style lang="scss">
+</style>
