@@ -1,8 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { CanvasEngine, type NumberPair } from "../../engine/drawingEngine";
-    import paper from 'paper';
-    import type { PageParentData } from "../../routes/$types";
+    import ColorSelector from "./ColorSelector.svelte";
 
 
     let { color = 'black', size = 2 } = $props();
@@ -45,12 +44,7 @@
     });
 
 </script>
-
 <div bind:this={canvasContainer} class="h-full w-full">
-    <canvas resize="true" bind:this={canvas}>
-
+    <canvas bind:this={canvas}>
     </canvas>
 </div>
-
-<style lang="scss">
-</style>
